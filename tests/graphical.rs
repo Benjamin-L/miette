@@ -396,6 +396,45 @@ fn single_line_highlight_with_empty_span() -> Result<(), MietteError> {
 }
 
 #[test]
+fn single_line_highlight_with_zero_width_space() -> Result<(), MietteError> {
+    #[derive(Debug, Diagnostic, Error)]
+    #[error("oops!")]
+    #[diagnostic(code(oops::my::bad), help("try doing it better next time?"))]
+    struct MyBad {
+        #[source_code]
+        src: NamedSource,
+        #[label("this bit here")]
+        highlight: SourceSpan,
+    }
+
+    let src = "ZWSP inside this: (\u{200B})\n".to_string();
+    let err = MyBad {
+        src: NamedSource::new("bad_file.rs", src),
+        highlight: (19, 3).into(),
+    };
+    let out = fmt_report(err.into());
+    println!("Error: {}", out);
+    // There's a literal ZWSP inside the parens for this string, because raw
+    // strings don't support escapes.
+    //
+    // It may or may not show up in your editor :)
+    let expected = r#"oops::my::bad
+
+  × oops!
+   ╭─[bad_file.rs:1:1]
+ 1 │ ZWSP inside this: (​)
+   ·                    ▲
+   ·                    ╰── this bit here
+   ╰────
+  help: try doing it better next time?
+"#
+    .trim_start()
+    .to_string();
+    assert_eq!(expected, out);
+    Ok(())
+}
+
+#[test]
 fn single_line_highlight_no_label() -> Result<(), MietteError> {
     #[derive(Debug, Diagnostic, Error)]
     #[error("oops!")]
