@@ -372,6 +372,24 @@ impl SourceSpan {
         self.offset.offset()
     }
 
+    /// The absolute offset of the end of the span.
+    ///
+    /// Like [`SourceSpan::offset`], this is measured in bytes, from the beginning of a
+    /// [`SourceCode`].
+    pub fn end(&self) -> usize {
+        self.offset.offset() + self.len()
+    }
+
+    /// Returns the smallest [`SourceSpan`] containing both `self` and `other`.
+    pub fn join(&self, other: Self) -> Self {
+        let start = self.offset().min(other.offset());
+        let end = self.end().max(other.end());
+        Self {
+            offset: start.into(),
+            length: (end - start).into(),
+        }
+    }
+
     /// Total length of the [`SourceSpan`], in bytes.
     pub fn len(&self) -> usize {
         self.length.offset()
@@ -497,6 +515,14 @@ impl From<ByteOffset> for SourceOffset {
     fn from(bytes: ByteOffset) -> Self {
         SourceOffset(bytes)
     }
+}
+
+#[test]
+fn test_span_join() {
+    let a = SourceSpan::from((2, 3));
+    let b = SourceSpan::from((3, 6));
+    let expected = SourceSpan::from((2, 7));
+    assert_eq!(a.join(b), expected);
 }
 
 #[test]
