@@ -816,6 +816,13 @@ impl GraphicalReportHandler {
                 line_offset = offset;
             }
         }
+
+        // Add an extra byte to the length of the last line, so that spans can
+        // point to EOF.
+        if let Some(line) = lines.last_mut() {
+            line.length += 1;
+        }
+
         Ok((context_data, lines))
     }
 }
@@ -838,6 +845,25 @@ Support types
 struct Line {
     line_number: usize,
     offset: usize,
+    // The 'length' field is the number of bytes that are considered part of
+    // the line for the purposes of determining whether a span endpoint falls
+    // inside the line.
+    //
+    // The 'text' field is the text content of the line, excluding newline
+    // characters.
+    //
+    // 'length' is *not* the same as 'text.len()', and it shouldn't be assumed
+    // that a span points to a valid offset in 'text'.
+    //
+    // A couple counterexamples:
+    //
+    //  The first line of "line 1\nline 2" has length 7, but text is "line 1".
+    //  Spans overlapping the "\n" in the source are considered part of line 1,
+    //  but the "\n" character itself isn't included in 'text'.
+    //
+    //  The last line of "line 1\nline 2" *also* has length 7, since spans
+    //  are allowed to point to the EOF. EOF isn't actually a character, and
+    //  isn't included in the original source or in 'text'.
     length: usize,
     text: String,
 }

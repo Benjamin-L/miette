@@ -332,12 +332,16 @@ impl NarratableReportHandler {
                 lines.push(Line {
                     line_number: line,
                     offset: line_offset,
+                    length: offset - line_offset,
                     text: line_str.clone(),
                     at_end_of_file,
                 });
                 line_str.clear();
                 line_offset = offset;
             }
+        }
+        if let Some(line) = lines.last_mut() {
+            line.length += 1;
         }
         Ok((context_data, lines))
     }
@@ -361,6 +365,7 @@ struct Line {
     line_number: usize,
     offset: usize,
     text: String,
+    length: usize,
     at_end_of_file: bool,
 }
 
@@ -383,6 +388,13 @@ fn safe_get_column(text: &str, offset: usize, start: bool) -> usize {
         }
         column
     });
+
+    // Bump for EOF
+    // TODO: comment explaining this in more detail
+    if offset > text.len() {
+        column += 1;
+    }
+
     if start {
         // Offset are zero-based, so plus one
         column += 1;
@@ -394,7 +406,7 @@ fn safe_get_column(text: &str, offset: usize, start: bool) -> usize {
 impl Line {
     fn span_attach(&self, span: &SourceSpan) -> Option<SpanAttach> {
         let span_end = span.offset() + span.len();
-        let line_end = self.offset + self.text.len();
+        let line_end = self.offset + self.length;// self.text.len();
 
         let start_after = span.offset() >= self.offset;
         let end_before = self.at_end_of_file || span_end <= line_end;

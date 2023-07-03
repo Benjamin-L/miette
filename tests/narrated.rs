@@ -238,6 +238,76 @@ diagnostic code: oops::my::bad
 }
 
 #[test]
+fn single_line_highlight_at_eof() -> Result<(), MietteError> {
+    #[derive(Debug, Diagnostic, Error)]
+    #[error("oops!")]
+    #[diagnostic(code(oops::my::bad), help("try doing it better next time?"))]
+    struct MyBad {
+        #[source_code]
+        src: NamedSource,
+        #[label("this bit here")]
+        highlight: SourceSpan,
+    }
+
+    let src = "source\ntext\n  here".to_string();
+    let err = MyBad {
+        src: NamedSource::new("bad_file.rs", src),
+        highlight: (18, 0).into(),
+    };
+    let out = fmt_report(err.into());
+    println!("Error: {}", out);
+    let expected = r#"oops!
+    Diagnostic severity: error
+Begin snippet for bad_file.rs starting at line 2, column 1
+
+snippet line 2: text
+snippet line 3:   here
+    label at line 3, column 7: this bit here
+diagnostic help: try doing it better next time?
+diagnostic code: oops::my::bad
+"#
+    .trim_start()
+    .to_string();
+    assert_eq!(expected, out);
+    Ok(())
+}
+
+#[test]
+fn single_line_highlight_include_eof() -> Result<(), MietteError> {
+    #[derive(Debug, Diagnostic, Error)]
+    #[error("oops!")]
+    #[diagnostic(code(oops::my::bad), help("try doing it better next time?"))]
+    struct MyBad {
+        #[source_code]
+        src: NamedSource,
+        #[label("this bit here")]
+        highlight: SourceSpan,
+    }
+
+    let src = "source\ntext\n  here".to_string();
+    let err = MyBad {
+        src: NamedSource::new("bad_file.rs", src),
+        highlight: (14, 5).into(),
+    };
+    let out = fmt_report(err.into());
+    println!("Error: {}", out);
+    let expected = r#"oops!
+    Diagnostic severity: error
+Begin snippet for bad_file.rs starting at line 2, column 1
+
+snippet line 2: text
+snippet line 3:   here
+    label at line 3, columns 3 to 7: this bit here
+diagnostic help: try doing it better next time?
+diagnostic code: oops::my::bad
+"#
+    .trim_start()
+    .to_string();
+    assert_eq!(expected, out);
+    Ok(())
+}
+
+#[test]
 fn multiple_same_line_highlights() -> Result<(), MietteError> {
     #[derive(Debug, Diagnostic, Error)]
     #[error("oops!")]

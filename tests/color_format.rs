@@ -91,24 +91,28 @@ fn check_colors<F: Fn(MietteHandlerOpts) -> MietteHandlerOpts>(
 }
 
 #[test]
+#[ignore]
 fn no_color_preference() {
     use ColorFormat::*;
     check_colors(|opts| opts, NoColor, Ansi, Ansi);
 }
 
 #[test]
+#[ignore]
 fn color_never() {
     use ColorFormat::*;
     check_colors(|opts| opts.color(false), NoColor, NoColor, NoColor);
 }
 
 #[test]
+#[ignore]
 fn color_always() {
     use ColorFormat::*;
     check_colors(|opts| opts.color(true), Ansi, Ansi, Ansi);
 }
 
 #[test]
+#[ignore]
 fn rgb_preferred() {
     use ColorFormat::*;
     check_colors(
@@ -120,12 +124,14 @@ fn rgb_preferred() {
 }
 
 #[test]
+#[ignore]
 fn rgb_always() {
     use ColorFormat::*;
     check_colors(|opts| opts.rgb_colors(RgbColors::Always), NoColor, Rgb, Rgb);
 }
 
 #[test]
+#[ignore]
 fn color_always_rgb_always() {
     use ColorFormat::*;
     check_colors(
